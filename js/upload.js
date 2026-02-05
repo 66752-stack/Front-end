@@ -2,6 +2,51 @@ let uploadedFile = null;
 let parsedData = null;
 
 // ===========================
+// SÄKERHETSKONSTANTER
+// ===========================
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+// ===========================
+// SÄKERHETSFUNKTIONER
+// ===========================
+function sanitizeFilename(filename) {
+    // Ta bort farliga tecken och begränsa längd
+    return filename.replace(/[<>:"/\\|?*]/g, '_').substring(0, 255);
+}
+
+function safeParseInt(value, defaultValue = 0) {
+    const parsed = parseInt(value);
+    return (!isNaN(parsed) && parsed >= 0) ? parsed : defaultValue;
+}
+
+function getInventoryData() {
+    try {
+        const data = JSON.parse(localStorage.getItem('inventoryData') || '{"devices": [], "consumables": []}');
+        // Validera struktur
+        if (!data || typeof data !== 'object') {
+            return {"devices": [], "consumables": []};
+        }
+        if (!Array.isArray(data.devices)) data.devices = [];
+        if (!Array.isArray(data.consumables)) data.consumables = [];
+        return data;
+    } catch (e) {
+        console.error('Fel vid läsning av localStorage:', e);
+        return {"devices": [], "consumables": []};
+    }
+}
+
+function generateId(prefix) {
+    // Använd crypto.randomUUID() om tillgänglig, annars fallback
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return `${prefix}-${crypto.randomUUID()}`;
+    }
+    // Fallback för äldre webbläsare
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000000);
+    return `${prefix}-${timestamp}-${random}`;
+}
+
+// ===========================
 // DRAG AND DROP FUNKTIONALITET
 // ===========================
 const uploadArea = document.getElementById('uploadArea');
@@ -59,6 +104,12 @@ function handleFiles(files) {
     if (files.length > 0) {
         const file = files[0];
 
+        // Validera filstorlek
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`Filen är för stor. Max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB tillåten.`);
+            return;
+        }
+
         // Validera filtyp
         const validTypes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -82,7 +133,9 @@ function showFileInfo(file) {
     const fileName = document.getElementById('fileName');
     const uploadArea = document.getElementById('uploadArea');
 
-    fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
+    // Sanera filnamn innan visning
+    const safeName = sanitizeFilename(file.name);
+    fileName.textContent = `${safeName} (${formatFileSize(file.size)})`;
     uploadArea.style.display = 'none';
     fileInfo.style.display = 'block';
 }
@@ -123,6 +176,12 @@ function processFile() {
                 return;
             }
 
+            // Begränsa antal rader för att undvika DoS
+            if (jsonData.length > 10000) {
+                alert('Filen innehåller för många rader. Max 10,000 rader tillåtna.');
+                return;
+            }
+
             parsedData = jsonData;
             displayPreview(jsonData);
 
@@ -130,6 +189,10 @@ function processFile() {
             console.error('Fel vid läsning av Excel-fil:', error);
             alert('Kunde inte läsa Excel-filen. Kontrollera att formatet är korrekt.');
         }
+    };
+
+    reader.onerror = function() {
+        alert('Fel uppstod vid läsning av filen.');
     };
 
     reader.readAsArrayBuffer(uploadedFile);
@@ -171,6 +234,7 @@ function displayPreview(data) {
         const row = document.createElement('tr');
         headers.forEach(header => {
             const td = document.createElement('td');
+            // Använd textContent för att förhindra XSS
             td.textContent = data[i][header] || '';
             row.appendChild(td);
         });
@@ -212,8 +276,8 @@ function confirmImport() {
         return;
     }
 
-    // Spara till localStorage (simulerar databas)
-    const existingData = JSON.parse(localStorage.getItem('inventoryData') || '{"devices": [], "consumables": []}');
+    // Hämta befintlig data med säker hantering
+    const existingData = getInventoryData();
 
     // Kategorisera data
     parsedData.forEach(row => {
@@ -224,10 +288,10 @@ function confirmImport() {
             // Det är en enhet
             const device = {
                 id: row['Enhet ID'] || row['ID'] || row['id'] || generateId('DEV'),
-                name: row['Enhetsnamn'] || row['Name'] || row['Namn'] || 'Okänd enhet',
-                type: row['Typ'] || row['Type'] || 'Okänd',
-                owner: hasOwner,
-                status: row['Status'] || 'Aktiv',
+                name: String(row['Enhetsnamn'] || row['Name'] || row['Namn'] || 'Okänd enhet').substring(0, 255),
+                type: String(row['Typ'] || row['Type'] || 'Okänd').substring(0, 100),
+                owner: String(hasOwner).substring(0, 255),
+                status: String(row['Status'] || 'Aktiv').substring(0, 50),
                 lastUpdated: new Date().toISOString().split('T')[0]
             };
             existingData.devices.push(device);
@@ -235,17 +299,22 @@ function confirmImport() {
             // Det är en förbrukningsvara
             const consumable = {
                 id: row['Produkt ID'] || row['ID'] || row['id'] || generateId('CONS'),
-                name: row['Produktnamn'] || row['Name'] || row['Namn'] || 'Okänd produkt',
-                category: row['Kategori'] || row['Category'] || 'Okänd',
-                stock: parseInt(hasStock) || 0,
-                minLevel: parseInt(row['Minimum nivå'] || row['Min Level'] || row['Minimum']) || 5
+                name: String(row['Produktnamn'] || row['Name'] || row['Namn'] || 'Okänd produkt').substring(0, 255),
+                category: String(row['Kategori'] || row['Category'] || 'Okänd').substring(0, 100),
+                stock: safeParseInt(hasStock, 0),
+                minLevel: safeParseInt(row['Minimum nivå'] || row['Min Level'] || row['Minimum'], 5)
             };
             existingData.consumables.push(consumable);
         }
     });
 
     // Spara till localStorage
-    localStorage.setItem('inventoryData', JSON.stringify(existingData));
+    try {
+        localStorage.setItem('inventoryData', JSON.stringify(existingData));
+    } catch (e) {
+        alert('Kunde inte spara data. Kontrollera att localStorage är aktiverat.');
+        return;
+    }
 
     // Visa bekräftelse
     alert(`✅ Import lyckades!\n\n${parsedData.length} rader importerade.\n\nGå till Inventarie-sidan för att se datan.`);
@@ -254,12 +323,6 @@ function confirmImport() {
     setTimeout(() => {
         window.location.href = 'index.html';
     }, 2000);
-}
-
-function generateId(prefix) {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${prefix}-${timestamp}${random}`;
 }
 
 // ===========================

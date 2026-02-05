@@ -1,8 +1,34 @@
 // ===========================
+// SÄKERHETSFUNKTIONER
+// ===========================
+function sanitizeInput(input) {
+    // Grundläggande sanering av input
+    if (typeof input !== 'string') return '';
+    return input.trim().substring(0, 1000);
+}
+
+function escapeCsvValue(value) {
+    // Konvertera till sträng
+    value = String(value);
+
+    // Förhindra CSV/Formula injection
+    const dangerousChars = ['=', '+', '-', '@', '\t', '\r'];
+    if (dangerousChars.some(char => value.startsWith(char))) {
+        value = "'" + value; // Prefix med single quote
+    }
+
+    // Escape quotes och wrap i quotes
+    return `"${value.replace(/"/g, '""')}"`;
+}
+
+// ===========================
 // SÖKFUNKTION
 // ===========================
 function searchInventory() {
-    const searchTerm = document.getElementById('searchField').value.toLowerCase().trim();
+    const searchField = document.getElementById('searchField');
+    if (!searchField) return;
+
+    const searchTerm = sanitizeInput(searchField.value).toLowerCase();
 
     // Sök i båda tabellerna
     searchInTable('devicesData', searchTerm);
@@ -56,7 +82,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // ===========================
 // FILTERFUNKTION
 // ===========================
-function filterCategory(category) {
+function filterCategory(category, event) {
+    // Säker hantering av event parameter
+    if (!event || !event.target) return;
+
     // Uppdatera aktiv klass på filter knappar
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(btn => {
@@ -107,13 +136,16 @@ function hideRows(rows) {
 // REDIGERA FUNKTION
 // ===========================
 function editItem(itemId) {
+    // Sanera itemId innan användning
+    const safeId = sanitizeInput(itemId);
+
     // Denna funktion kommer att kopplas till PHP backend senare
     // För nu, visa bara en bekräftelse
-    alert(`Redigera objekt: ${itemId}\n\nDenna funktion kommer att kopplas till PHP backend.`);
+    alert(`Redigera objekt: ${safeId}\n\nDenna funktion kommer att kopplas till PHP backend.`);
 
     // TODO: Implementera modal/form för redigering
     // TODO: Skicka data till PHP endpoint
-    console.log(`Redigerar objekt med ID: ${itemId}`);
+    console.log(`Redigerar objekt med ID: ${safeId}`);
 }
 
 // ===========================
@@ -144,10 +176,13 @@ function checkStockLevels() {
             const currentStock = parseInt(cells[3].textContent);
             const minLevel = parseInt(cells[4].textContent);
 
-            if (currentStock === 0) {
-                outOfStockItems.push(itemName);
-            } else if (currentStock < minLevel) {
-                lowStockItems.push(itemName);
+            // Validera att parsningen lyckades
+            if (!isNaN(currentStock) && !isNaN(minLevel)) {
+                if (currentStock === 0) {
+                    outOfStockItems.push(itemName);
+                } else if (currentStock < minLevel) {
+                    lowStockItems.push(itemName);
+                }
             }
         }
     });
@@ -174,11 +209,17 @@ function sortTable(tableId, columnIndex) {
     if (!table) return;
 
     const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
     const rows = Array.from(tbody.querySelectorAll('tr'));
 
     // Bestäm sorteringsordning
     const isAscending = table.dataset.sortOrder !== 'asc';
     table.dataset.sortOrder = isAscending ? 'asc' : 'desc';
+
+    // Validera columnIndex
+    if (columnIndex < 0 || rows.length === 0) return;
+    if (rows[0].cells.length <= columnIndex) return;
 
     // Sortera rader
     rows.sort((a, b) => {
@@ -210,6 +251,9 @@ function exportToCSV(tableId, filename) {
     const table = document.getElementById(tableId);
     if (!table) return;
 
+    // Sanera filnamn
+    const safeFilename = filename.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+
     let csv = [];
     const rows = table.querySelectorAll('tr');
 
@@ -218,10 +262,13 @@ function exportToCSV(tableId, filename) {
         const rowData = Array.from(cols).map(col => {
             // Ta bort redigera-knappen från export
             if (col.querySelector('button')) return '';
-            return `"${col.textContent.trim()}"`;
+            // Använd säker CSV escaping
+            return escapeCsvValue(col.textContent.trim());
         }).filter(text => text !== '""');
 
-        csv.push(rowData.join(','));
+        if (rowData.length > 0) {
+            csv.push(rowData.join(','));
+        }
     });
 
     // Skapa och ladda ner fil
@@ -231,11 +278,14 @@ function exportToCSV(tableId, filename) {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', filename);
+    link.setAttribute('download', safeFilename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Rensa URL objekt
+    URL.revokeObjectURL(url);
 }
 
 // ===========================
@@ -297,8 +347,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Formatera datum
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('sv-SE');
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return 'Ogiltigt datum';
+        }
+        return date.toLocaleDateString('sv-SE');
+    } catch (e) {
+        return 'Ogiltigt datum';
+    }
 }
 
 // Validera formulärdata (kommer användas senare med PHP)
@@ -309,8 +366,15 @@ function validateForm(formData) {
         errors.push('Namn måste anges');
     }
 
-    if (formData.quantity && formData.quantity < 0) {
-        errors.push('Antal kan inte vara negativt');
+    if (formData.name && formData.name.length > 255) {
+        errors.push('Namn får max vara 255 tecken');
+    }
+
+    if (formData.quantity !== undefined) {
+        const qty = parseInt(formData.quantity);
+        if (isNaN(qty) || qty < 0) {
+            errors.push('Antal måste vara ett positivt nummer');
+        }
     }
 
     return {
