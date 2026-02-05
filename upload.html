@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ladda upp Excel - IT-Inventariesystem</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+    <div class="header-container">
+        <h1>IT-Inventariesystem</h1>
+        <p class="subtitle">Importera data från Excel</p>
+    </div>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="index.html">Inventarie</a></li>
+        <li><a href="upload.html" class="active">Ladda upp Excel</a></li>
+        <li><a href="sida.html">Information</a></li>
+    </ul>
+</nav>
+
+<main>
+    <section class="upload-section">
+        <h2>Importera Excel-fil</h2>
+
+        <div class="upload-card">
+            <div class="upload-instructions">
+                <h3>📋 Instruktioner</h3>
+                <ul class="feature-list">
+                    <li>Välj en Excel-fil (.xlsx eller .xls) från din dator</li>
+                    <li>Filen måste ha kolumnerna: <strong>ID, Namn, Typ, Ägare/Kategori, Status/Antal</strong></li>
+                    <li>Första raden ska vara rubriker</li>
+                    <li>Du kan ladda upp både enheter och förbrukningsvaror</li>
+                </ul>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Dra och släpp din Excel-fil här</h3>
+                <p>eller</p>
+                <label for="fileInput" class="file-input-label">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+                    Välj fil från dator
+                </label>
+                <p class="upload-hint">Stödjer .xlsx och .xls filer</p>
+            </div>
+
+            <div class="file-info" id="fileInfo" style="display: none;">
+                <h3>Vald fil:</h3>
+                <p id="fileName"></p>
+                <button class="add-btn" onclick="processFile()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Importera data
+                </button>
+                <button class="cancel-btn" onclick="resetUpload()">Avbryt</button>
+            </div>
+        </div>
+
+        <!-- Preview av data -->
+        <div class="preview-section" id="previewSection" style="display: none;">
+            <h2>Förhandsvisning av data</h2>
+
+            <div class="preview-stats">
+                <div class="stat-card">
+                    <h3 id="totalRows">0</h3>
+                    <p>Rader hittade</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="devicesCount">0</h3>
+                    <p>Enheter</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="consumablesCount">0</h3>
+                    <p>Förbrukningsvaror</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="previewTable">
+                    <thead id="previewTableHead">
+                    <!-- Dynamisk header -->
+                    </thead>
+                    <tbody id="previewTableBody">
+                    <!-- Dynamisk data -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="action-buttons">
+                <button class="add-btn" onclick="confirmImport()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Bekräfta och importera
+                </button>
+                <button class="cancel-btn" onclick="resetUpload()">Avbryt import</button>
+            </div>
+        </div>
+
+        <!-- Exempel Excel-mall -->
+        <div class="template-section">
+            <h2>📥 Ladda ner Excel-mall</h2>
+            <p>Använd vår mall för att säkerställa rätt format:</p>
+
+            <div class="template-buttons">
+                <button class="template-btn" onclick="downloadDeviceTemplate()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Enhetsmall (.xlsx)
+                </button>
+                <button class="template-btn" onclick="downloadConsumableTemplate()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Förbrukningsvarumall (.xlsx)
+                </button>
+            </div>
+
+            <div class="template-preview">
+                <h3>Exempel på enhetsformat:</h3>
+                <table class="example-table">
+                    <thead>
+                    <tr>
+                        <th>Enhet ID</th>
+                        <th>Enhetsnamn</th>
+                        <th>Typ</th>
+                        <th>Ägare</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>DEV-001</td>
+                        <td>Laptop Dell XPS 15</td>
+                        <td>Laptop</td>
+                        <td>Anna Andersson</td>
+                        <td>Aktiv</td>
+                    </tr>
+                    <tr>
+                        <td>DEV-002</td>
+                        <td>Desktop HP EliteDesk</td>
+                        <td>Desktop</td>
+                        <td>Erik Eriksson</td>
+                        <td>Aktiv</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <h3>Exempel på förbrukningsvaruformat:</h3>
+                <table class="example-table">
+                    <thead>
+                    <tr>
+                        <th>Produkt ID</th>
+                        <th>Produktnamn</th>
+                        <th>Kategori</th>
+                        <th>Antal i lager</th>
+                        <th>Minimum nivå</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>CONS-001</td>
+                        <td>Logitech MX Master 3</td>
+                        <td>Möss</td>
+                        <td>15</td>
+                        <td>5</td>
+                    </tr>
+                    <tr>
+                        <td>CONS-002</td>
+                        <td>Sony WH-1000XM5</td>
+                        <td>Hörlurar</td>
+                        <td>8</td>
+                        <td>5</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 IT-Inventariesystem | Utvecklad av Elias, Dylan & Daniil</p>
+</footer>
+
+<!-- Lägg till XLSX library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/script.js"></script>
+<script src="js/upload.js"></script>
+</body>
+</html>

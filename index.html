@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT-Inventariesystem</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+    <div class="header-container">
+        <h1>IT-Inventariesystem</h1>
+        <p class="subtitle">Hantera enheter och förbrukningsvaror</p>
+    </div>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="index.html" class="active">Inventarie</a></li>
+        <li><a href="upload.html">Ladda upp Excel</a></li>
+        <li><a href="sida.html">Information</a></li>
+    </ul>
+</nav>
+
+<main>
+    <!-- Sökfält sektion -->
+    <section class="search-section">
+        <div class="search-container">
+            <input type="text" id="searchField" placeholder="Sök efter enhet, ägare eller förbrukningsvara...">
+            <button onclick="searchInventory()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                Sök
+            </button>
+        </div>
+    </section>
+
+    <!-- Filter knappar -->
+    <section class="filter-section">
+        <button class="filter-btn active" onclick="filterCategory('all')">Alla</button>
+        <button class="filter-btn" onclick="filterCategory('devices')">Enheter & Datorer</button>
+        <button class="filter-btn" onclick="filterCategory('consumables')">Förbrukningsvaror</button>
+    </section>
+
+    <!-- Enheter och ägare (datorer) -->
+    <section class="inventory-section">
+        <h2>Enheter och Ägare</h2>
+        <div class="table-container">
+            <table id="devicesTable">
+                <thead>
+                <tr>
+                    <th>Enhet ID</th>
+                    <th>Enhetsnamn</th>
+                    <th>Typ</th>
+                    <th>Ägare</th>
+                    <th>Status</th>
+                    <th>Senast uppdaterad</th>
+                    <th>Åtgärder</th>
+                </tr>
+                </thead>
+                <tbody id="devicesData">
+                <!-- Exempel data - kommer ersättas av PHP -->
+                <tr data-category="devices">
+                    <td>DEV-001</td>
+                    <td>Laptop Dell XPS 15</td>
+                    <td>Laptop</td>
+                    <td>Anna Andersson</td>
+                    <td><span class="status-badge status-active">Aktiv</span></td>
+                    <td>2026-02-05</td>
+                    <td><button class="edit-btn" onclick="editItem('DEV-001')">Redigera</button></td>
+                </tr>
+                <tr data-category="devices">
+                    <td>DEV-002</td>
+                    <td>Desktop HP EliteDesk</td>
+                    <td>Desktop</td>
+                    <td>Erik Eriksson</td>
+                    <td><span class="status-badge status-active">Aktiv</span></td>
+                    <td>2026-02-04</td>
+                    <td><button class="edit-btn" onclick="editItem('DEV-002')">Redigera</button></td>
+                </tr>
+                <tr data-category="devices">
+                    <td>DEV-003</td>
+                    <td>MacBook Pro 14"</td>
+                    <td>Laptop</td>
+                    <td>Sara Svensson</td>
+                    <td><span class="status-badge status-maintenance">Underhåll</span></td>
+                    <td>2026-02-03</td>
+                    <td><button class="edit-btn" onclick="editItem('DEV-003')">Redigera</button></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Förbrukningsvaror med saldo -->
+    <section class="inventory-section">
+        <h2>Förbrukningsvaror</h2>
+        <div class="table-container">
+            <table id="consumablesTable">
+                <thead>
+                <tr>
+                    <th>Produkt ID</th>
+                    <th>Produktnamn</th>
+                    <th>Kategori</th>
+                    <th>Antal i lager</th>
+                    <th>Minimum nivå</th>
+                    <th>Status</th>
+                    <th>Åtgärder</th>
+                </tr>
+                </thead>
+                <tbody id="consumablesData">
+                <!-- Exempel data - kommer ersättas av PHP -->
+                <tr data-category="consumables">
+                    <td>CONS-001</td>
+                    <td>Logitech MX Master 3</td>
+                    <td>Möss</td>
+                    <td>15</td>
+                    <td>5</td>
+                    <td><span class="stock-badge stock-good">I lager</span></td>
+                    <td><button class="edit-btn" onclick="editItem('CONS-001')">Redigera</button></td>
+                </tr>
+                <tr data-category="consumables">
+                    <td>CONS-002</td>
+                    <td>Sony WH-1000XM5</td>
+                    <td>Hörlurar</td>
+                    <td>8</td>
+                    <td>5</td>
+                    <td><span class="stock-badge stock-good">I lager</span></td>
+                    <td><button class="edit-btn" onclick="editItem('CONS-002')">Redigera</button></td>
+                </tr>
+                <tr data-category="consumables">
+                    <td>CONS-003</td>
+                    <td>USB-C Kabel 2m</td>
+                    <td>Kablar</td>
+                    <td>3</td>
+                    <td>10</td>
+                    <td><span class="stock-badge stock-low">Lågt lager</span></td>
+                    <td><button class="edit-btn" onclick="editItem('CONS-003')">Redigera</button></td>
+                </tr>
+                <tr data-category="consumables">
+                    <td>CONS-004</td>
+                    <td>Logitech MX Keys</td>
+                    <td>Tangentbord</td>
+                    <td>0</td>
+                    <td>3</td>
+                    <td><span class="stock-badge stock-out">Slut i lager</span></td>
+                    <td><button class="edit-btn" onclick="editItem('CONS-004')">Redigera</button></td>
+                </tr>
+                <tr data-category="consumables">
+                    <td>CONS-005</td>
+                    <td>Dell P2422H Monitor</td>
+                    <td>Skärmar</td>
+                    <td>12</td>
+                    <td>5</td>
+                    <td><span class="stock-badge stock-good">I lager</span></td>
+                    <td><button class="edit-btn" onclick="editItem('CONS-005')">Redigera</button></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Lägg till ny enhet knapp -->
+    <section class="add-section">
+        <button class="add-btn" onclick="addNewItem()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Lägg till ny enhet/vara
+        </button>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 IT-Inventariesystem | Utvecklad av Elias, Dylan, Daniil, Lucas, Alexander & Vincent</p>
+</footer>
+
+<script src="js/script.js"></script>
+</body>
+</html>
