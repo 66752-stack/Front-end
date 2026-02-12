@@ -42,16 +42,16 @@
                 <h3>Dra och släpp din Excel-fil här</h3>
                 <p>eller</p>
                 <label for="fileInput" class="file-input-label">
-                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
                     Välj fil från dator
                 </label>
                 <p class="upload-hint">Stödjer .xlsx och .xls filer</p>
             </div>
 
-            <div class="file-info" id="fileInfo" style="display: none;">
+            <div class="file-info hidden" id="fileInfo">
                 <h3>Vald fil:</h3>
                 <p id="fileName"></p>
-                <button class="add-btn" onclick="processFile()">
+                <button class="add-btn" id="processFileBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
@@ -59,13 +59,13 @@
                     </svg>
                     Importera data
                 </button>
-                <button class="cancel-btn" onclick="resetUpload()">Avbryt</button>
+                <button class="cancel-btn" id="resetUploadBtn1">Avbryt</button>
             </div>
         </div>
 
         <!-- Preview av data -->
-        <div class="preview-section" id="previewSection" style="display: none;">
-            <h2>Förhandsvisning av data</h2>
+        <div class="preview-section hidden" id="previewSection">
+            <h2>Förhandsgranskning av data</h2>
 
             <div class="preview-stats">
                 <div class="stat-card">
@@ -94,13 +94,13 @@
             </div>
 
             <div class="action-buttons">
-                <button class="add-btn" onclick="confirmImport()">
+                <button class="add-btn" id="confirmImportBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     Bekräfta och importera
                 </button>
-                <button class="cancel-btn" onclick="resetUpload()">Avbryt import</button>
+                <button class="cancel-btn" id="resetUploadBtn2">Avbryt import</button>
             </div>
         </div>
 
@@ -110,7 +110,7 @@
             <p>Använd vår mall för att säkerställa rätt format:</p>
 
             <div class="template-buttons">
-                <button class="template-btn" onclick="downloadDeviceTemplate()">
+                <button class="template-btn" id="downloadDeviceTemplateBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -118,7 +118,7 @@
                     </svg>
                     Enhetsmall (.xlsx)
                 </button>
-                <button class="template-btn" onclick="downloadConsumableTemplate()">
+                <button class="template-btn" id="downloadConsumableTemplateBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -196,8 +196,8 @@
 </footer>
 
 <!-- Lägg till XLSX library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/script_with_api.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.mini.min.js"></script>
+<script src="js/script.js"></script>
 <script src="js/upload.js"></script>
 </body>
 </html>

@@ -1,34 +1,8 @@
 // ===========================
-// SÄKERHETSFUNKTIONER
-// ===========================
-function sanitizeInput(input) {
-    // Grundläggande sanering av input
-    if (typeof input !== 'string') return '';
-    return input.trim().substring(0, 1000);
-}
-
-function escapeCsvValue(value) {
-    // Konvertera till sträng
-    value = String(value);
-
-    // Förhindra CSV/Formula injection
-    const dangerousChars = ['=', '+', '-', '@', '\t', '\r'];
-    if (dangerousChars.some(char => value.startsWith(char))) {
-        value = "'" + value; // Prefix med single quote
-    }
-
-    // Escape quotes och wrap i quotes
-    return `"${value.replace(/"/g, '""')}"`;
-}
-
-// ===========================
 // SÖKFUNKTION
 // ===========================
 function searchInventory() {
-    const searchField = document.getElementById('searchField');
-    if (!searchField) return;
-
-    const searchTerm = sanitizeInput(searchField.value).toLowerCase();
+    const searchTerm = document.getElementById('searchField').value.toLowerCase().trim();
 
     // Sök i båda tabellerna
     searchInTable('devicesData', searchTerm);
@@ -62,48 +36,10 @@ function searchInTable(tableBodyId, searchTerm) {
     return visibleCount;
 }
 
-// Lägg till enter-tangent support för sökfältet
-document.addEventListener('DOMContentLoaded', function() {
-    const searchField = document.getElementById('searchField');
-    if (searchField) {
-        searchField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchInventory();
-            }
-        });
-
-        // RealtidssÃ¶kning när användaren skriver
-        searchField.addEventListener('input', function() {
-            searchInventory();
-        });
-    }
-});
-
 // ===========================
-// FILTERFUNKTION - FIXAD VERSION
+// FILTERFUNKTION
 // ===========================
-function filterCategory(category, buttonElement) {
-    // Hantera både när funktionen anropas med 'this' från onclick eller med event
-    let targetButton = buttonElement;
-
-    // Om buttonElement inte är ett element, försök hitta det från event
-    if (!targetButton || !targetButton.classList) {
-        targetButton = window.event?.target;
-    }
-
-    // Om vi fortfarande inte har en knapp, avbryt
-    if (!targetButton || !targetButton.classList) {
-        console.warn('Ingen knapp-element hittad för filtrering');
-        return;
-    }
-
-    // Uppdatera aktiv klass på filter knappar
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
-        btn.classList.remove('active');
-    });
-    targetButton.classList.add('active');
-
+function filterCategory(category) {
     // Visa/dölj tabeller baserat på kategori
     const deviceRows = document.querySelectorAll('[data-category="devices"]');
     const consumableRows = document.querySelectorAll('[data-category="consumables"]');
@@ -146,17 +82,14 @@ function hideRows(rows) {
 // ===========================
 // REDIGERA FUNKTION
 // ===========================
-function editItem(itemId) {
-    // Sanera itemId innan användning
-    const safeId = sanitizeInput(itemId);
-
+function editItem(itemId, type = 'device') {
     // Denna funktion kommer att kopplas till PHP backend senare
     // För nu, visa bara en bekräftelse
-    alert(`Redigera objekt: ${safeId}\n\nDenna funktion kommer att kopplas till PHP backend.`);
+    alert(`Redigera objekt: ${itemId}\n\nDenna funktion kommer att kopplas till PHP backend.`);
 
     // TODO: Implementera modal/form för redigering
     // TODO: Skicka data till PHP endpoint
-    console.log(`Redigerar objekt med ID: ${safeId}`);
+    console.log(`Redigerar objekt med ID: ${itemId}, typ: ${type}`);
 }
 
 // ===========================
@@ -187,13 +120,10 @@ function checkStockLevels() {
             const currentStock = parseInt(cells[3].textContent);
             const minLevel = parseInt(cells[4].textContent);
 
-            // Validera att parsningen lyckades
-            if (!isNaN(currentStock) && !isNaN(minLevel)) {
-                if (currentStock === 0) {
-                    outOfStockItems.push(itemName);
-                } else if (currentStock < minLevel) {
-                    lowStockItems.push(itemName);
-                }
+            if (currentStock === 0) {
+                outOfStockItems.push(itemName);
+            } else if (currentStock < minLevel) {
+                lowStockItems.push(itemName);
             }
         }
     });
@@ -220,17 +150,11 @@ function sortTable(tableId, columnIndex) {
     if (!table) return;
 
     const tbody = table.querySelector('tbody');
-    if (!tbody) return;
-
     const rows = Array.from(tbody.querySelectorAll('tr'));
 
     // Bestäm sorteringsordning
     const isAscending = table.dataset.sortOrder !== 'asc';
     table.dataset.sortOrder = isAscending ? 'asc' : 'desc';
-
-    // Validera columnIndex
-    if (columnIndex < 0 || rows.length === 0) return;
-    if (rows[0].cells.length <= columnIndex) return;
 
     // Sortera rader
     rows.sort((a, b) => {
@@ -262,9 +186,6 @@ function exportToCSV(tableId, filename) {
     const table = document.getElementById(tableId);
     if (!table) return;
 
-    // Sanera filnamn
-    const safeFilename = filename.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
-
     let csv = [];
     const rows = table.querySelectorAll('tr');
 
@@ -273,13 +194,10 @@ function exportToCSV(tableId, filename) {
         const rowData = Array.from(cols).map(col => {
             // Ta bort redigera-knappen från export
             if (col.querySelector('button')) return '';
-            // Använd säker CSV escaping
-            return escapeCsvValue(col.textContent.trim());
+            return `"${col.textContent.trim()}"`;
         }).filter(text => text !== '""');
 
-        if (rowData.length > 0) {
-            csv.push(rowData.join(','));
-        }
+        csv.push(rowData.join(','));
     });
 
     // Skapa och ladda ner fil
@@ -289,14 +207,11 @@ function exportToCSV(tableId, filename) {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', safeFilename);
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    // Rensa URL objekt
-    URL.revokeObjectURL(url);
 }
 
 // ===========================
@@ -330,27 +245,72 @@ function getInventoryStats() {
 }
 
 // ===========================
-// INITIALISERING
+// LADDA SAMPLE DATA (om ingen databas)
 // ===========================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('IT-Inventariesystem initierat');
+function loadSampleData() {
+    const devicesData = [
+        { id: 'DEV-001', name: 'Laptop Dell XPS 15', type: 'Laptop', owner: 'Anna Andersson', status: 'Aktiv', updated: '2026-02-05' },
+        { id: 'DEV-002', name: 'Desktop HP EliteDesk', type: 'Desktop', owner: 'Erik Eriksson', status: 'Aktiv', updated: '2026-02-04' },
+        { id: 'DEV-003', name: 'MacBook Pro 14"', type: 'Laptop', owner: 'Sara Svensson', status: 'Underhåll', updated: '2026-02-03' }
+    ];
 
-    // Kontrollera lagernivåer vid sidladdning
-    const stockStatus = checkStockLevels();
+    const consumablesData = [
+        { id: 'CONS-001', name: 'Logitech MX Master 3', category: 'Möss', stock: 15, minLevel: 5 },
+        { id: 'CONS-002', name: 'Sony WH-1000XM5', category: 'Hörlurar', stock: 8, minLevel: 5 },
+        { id: 'CONS-003', name: 'USB-C Kabel 2m', category: 'Kablar', stock: 3, minLevel: 10 },
+        { id: 'CONS-004', name: 'Logitech MX Keys', category: 'Tangentbord', stock: 0, minLevel: 3 },
+        { id: 'CONS-005', name: 'Dell P2422H Monitor', category: 'Skärmar', stock: 12, minLevel: 5 }
+    ];
 
-    // Visa statistik i konsolen
-    const stats = getInventoryStats();
-    console.log('Inventariestatistik:', stats);
+    const devicesBody = document.getElementById('devicesData');
+    const consumablesBody = document.getElementById('consumablesData');
 
-    // Lägg till klickbara headers för sortering (kan implementeras senare)
-    const headers = document.querySelectorAll('th');
-    headers.forEach((header, index) => {
-        if (!header.textContent.includes('Åtgärder')) {
-            header.style.cursor = 'pointer';
-            header.title = 'Klicka för att sortera';
-        }
-    });
-});
+    if (devicesBody) {
+        devicesData.forEach(device => {
+            const statusClass = device.status === 'Aktiv' ? 'status-active' : 'status-maintenance';
+            const row = document.createElement('tr');
+            row.setAttribute('data-category', 'devices');
+            row.innerHTML = `
+                <td>${device.id}</td>
+                <td>${device.name}</td>
+                <td>${device.type}</td>
+                <td>${device.owner}</td>
+                <td><span class="status-badge ${statusClass}">${device.status}</span></td>
+                <td>${device.updated}</td>
+                <td><button class="edit-btn" data-item-id="${device.id}" data-item-type="device">Redigera</button></td>
+            `;
+            devicesBody.appendChild(row);
+        });
+    }
+
+    if (consumablesBody) {
+        consumablesData.forEach(item => {
+            let stockClass = 'stock-good';
+            let stockStatus = 'I lager';
+
+            if (item.stock === 0) {
+                stockClass = 'stock-out';
+                stockStatus = 'Slut i lager';
+            } else if (item.stock < item.minLevel) {
+                stockClass = 'stock-low';
+                stockStatus = 'Lågt lager';
+            }
+
+            const row = document.createElement('tr');
+            row.setAttribute('data-category', 'consumables');
+            row.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.name}</td>
+                <td>${item.category}</td>
+                <td>${item.stock}</td>
+                <td>${item.minLevel}</td>
+                <td><span class="stock-badge ${stockClass}">${stockStatus}</span></td>
+                <td><button class="edit-btn" data-item-id="${item.id}" data-item-type="consumable">Redigera</button></td>
+            `;
+            consumablesBody.appendChild(row);
+        });
+    }
+}
 
 // ===========================
 // HJÄLPFUNKTIONER
@@ -358,15 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Formatera datum
 function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) {
-            return 'Ogiltigt datum';
-        }
-        return date.toLocaleDateString('sv-SE');
-    } catch (e) {
-        return 'Ogiltigt datum';
-    }
+    const date = new Date(dateString);
+    return date.toLocaleDateString('sv-SE');
 }
 
 // Validera formulärdata (kommer användas senare med PHP)
@@ -377,15 +330,8 @@ function validateForm(formData) {
         errors.push('Namn måste anges');
     }
 
-    if (formData.name && formData.name.length > 255) {
-        errors.push('Namn får max vara 255 tecken');
-    }
-
-    if (formData.quantity !== undefined) {
-        const qty = parseInt(formData.quantity);
-        if (isNaN(qty) || qty < 0) {
-            errors.push('Antal måste vara ett positivt nummer');
-        }
+    if (formData.quantity && formData.quantity < 0) {
+        errors.push('Antal kan inte vara negativt');
     }
 
     return {
@@ -393,3 +339,79 @@ function validateForm(formData) {
         errors: errors
     };
 }
+
+// ===========================
+// INITIALISERING
+// ===========================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('IT-Inventariesystem initierat');
+
+    // Ladda sample data
+    loadSampleData();
+
+    // Lägg till event listener för sökknapp
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', searchInventory);
+    }
+
+    // Lägg till event listener för sökfält
+    const searchField = document.getElementById('searchField');
+    if (searchField) {
+        searchField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchInventory();
+            }
+        });
+
+        // Realtidssökning när användaren skriver
+        searchField.addEventListener('input', function() {
+            searchInventory();
+        });
+    }
+
+    // Lägg till event listeners för filterknappar
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Ta bort active från alla knappar
+            filterButtons.forEach(b => b.classList.remove('active'));
+            // Lägg till active på klickad knapp
+            this.classList.add('active');
+            // Filtrera baserat på data-filter attribut
+            const filter = this.getAttribute('data-filter');
+            filterCategory(filter);
+        });
+    });
+
+    // Lägg till event listener för "Lägg till ny" knapp
+    const addNewItemBtn = document.getElementById('addNewItemBtn');
+    if (addNewItemBtn) {
+        addNewItemBtn.addEventListener('click', addNewItem);
+    }
+
+    // Lägg till event listeners för alla redigera-knappar (delegation)
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('edit-btn')) {
+            const itemId = e.target.getAttribute('data-item-id');
+            const itemType = e.target.getAttribute('data-item-type');
+            editItem(itemId, itemType);
+        }
+    });
+
+    // Kontrollera lagernivåer vid sidladdning
+    setTimeout(() => {
+        const stockStatus = checkStockLevels();
+        const stats = getInventoryStats();
+        console.log('Inventariestatistik:', stats);
+    }, 500);
+
+    // Lägg till klickbara headers för sortering (kan implementeras senare)
+    const headers = document.querySelectorAll('th');
+    headers.forEach((header, index) => {
+        if (!header.textContent.includes('Åtgärder')) {
+            header.style.cursor = 'pointer';
+            header.title = 'Klicka för att sortera';
+        }
+    });
+});

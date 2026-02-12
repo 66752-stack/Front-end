@@ -944,6 +944,11 @@ footer p {
     display: none !important;
 }
 
+/* Extra hidden class för file input */
+input[type="file"].hidden {
+    display: none !important;
+}
+
 .text-center {
     text-align: center;
 }
