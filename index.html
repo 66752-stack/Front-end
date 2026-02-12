@@ -37,11 +37,11 @@
         </div>
     </section>
 
-    <!-- Filter knappar -->
+    <!-- Filter knappar - FIXAD VERSION -->
     <section class="filter-section">
-        <button class="filter-btn active" onclick="filterCategory('all')">Alla</button>
-        <button class="filter-btn" onclick="filterCategory('devices')">Enheter & Datorer</button>
-        <button class="filter-btn" onclick="filterCategory('consumables')">Förbrukningsvaror</button>
+        <button class="filter-btn active" onclick="filterCategory('all', this)">Alla</button>
+        <button class="filter-btn" onclick="filterCategory('devices', this)">Enheter & Datorer</button>
+        <button class="filter-btn" onclick="filterCategory('consumables', this)">Förbrukningsvaror</button>
     </section>
 
     <!-- Enheter och ägare (datorer) -->
@@ -178,6 +178,6 @@
     <p>&copy; 2026 IT-Inventariesystem | Utvecklad av Elias, Dylan, Daniil, Lucas, Alexander & Vincent</p>
 </footer>
 
-<script src="js/script.js"></script>
+<script src="js/script_with_api.js"></script>
 </body>
 </html>

@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Realtidssökning när användaren skriver
+        // RealtidssÃ¶kning när användaren skriver
         searchField.addEventListener('input', function() {
             searchInventory();
         });
@@ -80,18 +80,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ===========================
-// FILTERFUNKTION
+// FILTERFUNKTION - FIXAD VERSION
 // ===========================
-function filterCategory(category, event) {
-    // Säker hantering av event parameter
-    if (!event || !event.target) return;
+function filterCategory(category, buttonElement) {
+    // Hantera både när funktionen anropas med 'this' från onclick eller med event
+    let targetButton = buttonElement;
+
+    // Om buttonElement inte är ett element, försök hitta det från event
+    if (!targetButton || !targetButton.classList) {
+        targetButton = window.event?.target;
+    }
+
+    // Om vi fortfarande inte har en knapp, avbryt
+    if (!targetButton || !targetButton.classList) {
+        console.warn('Ingen knapp-element hittad för filtrering');
+        return;
+    }
 
     // Uppdatera aktiv klass på filter knappar
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    targetButton.classList.add('active');
 
     // Visa/dölj tabeller baserat på kategori
     const deviceRows = document.querySelectorAll('[data-category="devices"]');

@@ -2,15 +2,15 @@ let uploadedFile = null;
 let parsedData = null;
 
 // ===========================
-// SÄKERHETSKONSTANTER
+// SÃ„KERHETSKONSTANTER
 // ===========================
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 // ===========================
-// SÄKERHETSFUNKTIONER
+// SÃ„KERHETSFUNKTIONER
 // ===========================
 function sanitizeFilename(filename) {
-    // Ta bort farliga tecken och begränsa längd
+    // Ta bort farliga tecken och begrÃ¤nsa lÃ¤ngd
     return filename.replace(/[<>:"/\\|?*]/g, '_').substring(0, 255);
 }
 
@@ -30,17 +30,17 @@ function getInventoryData() {
         if (!Array.isArray(data.consumables)) data.consumables = [];
         return data;
     } catch (e) {
-        console.error('Fel vid läsning av localStorage:', e);
+        console.error('Fel vid lÃ¤sning av localStorage:', e);
         return {"devices": [], "consumables": []};
     }
 }
 
 function generateId(prefix) {
-    // Använd crypto.randomUUID() om tillgänglig, annars fallback
+    // AnvÃ¤nd crypto.randomUUID() om tillgÃ¤nglig, annars fallback
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return `${prefix}-${crypto.randomUUID()}`;
     }
-    // Fallback för äldre webbläsare
+    // Fallback fÃ¶r Ã¤ldre webblÃ¤sare
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000000);
     return `${prefix}-${timestamp}-${random}`;
@@ -53,13 +53,13 @@ const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
 
 if (uploadArea) {
-    // Förhindra default drag behaviors
+    // FÃ¶rhindra default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         uploadArea.addEventListener(eventName, preventDefaults, false);
         document.body.addEventListener(eventName, preventDefaults, false);
     });
 
-    // Highlight drop area när fil dras över
+    // Highlight drop area nÃ¤r fil dras Ã¶ver
     ['dragenter', 'dragover'].forEach(eventName => {
         uploadArea.addEventListener(eventName, highlight, false);
     });
@@ -106,7 +106,7 @@ function handleFiles(files) {
 
         // Validera filstorlek
         if (file.size > MAX_FILE_SIZE) {
-            alert(`Filen är för stor. Max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB tillåten.`);
+            alert(`Filen Ã¤r fÃ¶r stor. Max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB tillÃ¥ten.`);
             return;
         }
 
@@ -119,7 +119,7 @@ function handleFiles(files) {
         if (!validTypes.includes(file.type) &&
             !file.name.endsWith('.xlsx') &&
             !file.name.endsWith('.xls')) {
-            alert('Vänligen välj en Excel-fil (.xlsx eller .xls)');
+            alert('VÃ¤nligen vÃ¤lj en Excel-fil (.xlsx eller .xls)');
             return;
         }
 
@@ -164,7 +164,7 @@ function processFile() {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
 
-            // Ta första arbetsbladet
+            // Ta fÃ¶rsta arbetsbladet
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
 
@@ -176,9 +176,9 @@ function processFile() {
                 return;
             }
 
-            // Begränsa antal rader för att undvika DoS
+            // BegrÃ¤nsa antal rader fÃ¶r att undvika DoS
             if (jsonData.length > 10000) {
-                alert('Filen innehåller för många rader. Max 10,000 rader tillåtna.');
+                alert('Filen innehÃ¥ller fÃ¶r mÃ¥nga rader. Max 10,000 rader tillÃ¥tna.');
                 return;
             }
 
@@ -186,20 +186,20 @@ function processFile() {
             displayPreview(jsonData);
 
         } catch (error) {
-            console.error('Fel vid läsning av Excel-fil:', error);
-            alert('Kunde inte läsa Excel-filen. Kontrollera att formatet är korrekt.');
+            console.error('Fel vid lÃ¤sning av Excel-fil:', error);
+            alert('Kunde inte lÃ¤sa Excel-filen. Kontrollera att formatet Ã¤r korrekt.');
         }
     };
 
     reader.onerror = function() {
-        alert('Fel uppstod vid läsning av filen.');
+        alert('Fel uppstod vid lÃ¤sning av filen.');
     };
 
     reader.readAsArrayBuffer(uploadedFile);
 }
 
 // ===========================
-// VISA FÖRHANDSGRANSKNING
+// VISA FÃ–RHANDSGRANSKNING
 // ===========================
 function displayPreview(data) {
     const previewSection = document.getElementById('previewSection');
@@ -218,7 +218,7 @@ function displayPreview(data) {
 
     if (data.length === 0) return;
 
-    // Skapa headers från första objektet
+    // Skapa headers frÃ¥n fÃ¶rsta objektet
     const headers = Object.keys(data[0]);
     const headerRow = document.createElement('tr');
     headers.forEach(header => {
@@ -228,13 +228,13 @@ function displayPreview(data) {
     });
     previewTableHead.appendChild(headerRow);
 
-    // Lägg till data rader (max 10 för preview)
+    // LÃ¤gg till data rader (max 10 fÃ¶r preview)
     const previewLimit = Math.min(data.length, 10);
     for (let i = 0; i < previewLimit; i++) {
         const row = document.createElement('tr');
         headers.forEach(header => {
             const td = document.createElement('td');
-            // Använd textContent för att förhindra XSS
+            // AnvÃ¤nd textContent fÃ¶r att fÃ¶rhindra XSS
             td.textContent = data[i][header] || '';
             row.appendChild(td);
         });
@@ -248,12 +248,12 @@ function displayPreview(data) {
 function updateStats(data) {
     document.getElementById('totalRows').textContent = data.length;
 
-    // Försök identifiera typ baserat på kolumnnamn
+    // FÃ¶rsÃ¶k identifiera typ baserat pÃ¥ kolumnnamn
     let devicesCount = 0;
     let consumablesCount = 0;
 
     data.forEach(row => {
-        const hasOwner = row['Ägare'] || row['Owner'] || row['ägare'];
+        const hasOwner = row['Ã„gare'] || row['Owner'] || row['Ã¤gare'];
         const hasStock = row['Antal i lager'] || row['Stock'] || row['Antal'];
 
         if (hasOwner) {
@@ -268,7 +268,7 @@ function updateStats(data) {
 }
 
 // ===========================
-// BEKRÄFTA OCH IMPORTERA
+// BEKRÃ„FTA OCH IMPORTERA
 // ===========================
 function confirmImport() {
     if (!parsedData || parsedData.length === 0) {
@@ -276,33 +276,33 @@ function confirmImport() {
         return;
     }
 
-    // Hämta befintlig data med säker hantering
+    // HÃ¤mta befintlig data med sÃ¤ker hantering
     const existingData = getInventoryData();
 
     // Kategorisera data
     parsedData.forEach(row => {
-        const hasOwner = row['Ägare'] || row['Owner'] || row['ägare'];
+        const hasOwner = row['Ã„gare'] || row['Owner'] || row['Ã¤gare'];
         const hasStock = row['Antal i lager'] || row['Stock'] || row['Antal'];
 
         if (hasOwner) {
-            // Det är en enhet
+            // Det Ã¤r en enhet
             const device = {
                 id: row['Enhet ID'] || row['ID'] || row['id'] || generateId('DEV'),
-                name: String(row['Enhetsnamn'] || row['Name'] || row['Namn'] || 'Okänd enhet').substring(0, 255),
-                type: String(row['Typ'] || row['Type'] || 'Okänd').substring(0, 100),
+                name: String(row['Enhetsnamn'] || row['Name'] || row['Namn'] || 'OkÃ¤nd enhet').substring(0, 255),
+                type: String(row['Typ'] || row['Type'] || 'OkÃ¤nd').substring(0, 100),
                 owner: String(hasOwner).substring(0, 255),
                 status: String(row['Status'] || 'Aktiv').substring(0, 50),
                 lastUpdated: new Date().toISOString().split('T')[0]
             };
             existingData.devices.push(device);
         } else if (hasStock !== undefined) {
-            // Det är en förbrukningsvara
+            // Det Ã¤r en fÃ¶rbrukningsvara
             const consumable = {
                 id: row['Produkt ID'] || row['ID'] || row['id'] || generateId('CONS'),
-                name: String(row['Produktnamn'] || row['Name'] || row['Namn'] || 'Okänd produkt').substring(0, 255),
-                category: String(row['Kategori'] || row['Category'] || 'Okänd').substring(0, 100),
+                name: String(row['Produktnamn'] || row['Name'] || row['Namn'] || 'OkÃ¤nd produkt').substring(0, 255),
+                category: String(row['Kategori'] || row['Category'] || 'OkÃ¤nd').substring(0, 100),
                 stock: safeParseInt(hasStock, 0),
-                minLevel: safeParseInt(row['Minimum nivå'] || row['Min Level'] || row['Minimum'], 5)
+                minLevel: safeParseInt(row['Minimum nivÃ¥'] || row['Min Level'] || row['Minimum'], 5)
             };
             existingData.consumables.push(consumable);
         }
@@ -312,12 +312,12 @@ function confirmImport() {
     try {
         localStorage.setItem('inventoryData', JSON.stringify(existingData));
     } catch (e) {
-        alert('Kunde inte spara data. Kontrollera att localStorage är aktiverat.');
+        alert('Kunde inte spara data. Kontrollera att localStorage Ã¤r aktiverat.');
         return;
     }
 
-    // Visa bekräftelse
-    alert(`✅ Import lyckades!\n\n${parsedData.length} rader importerade.\n\nGå till Inventarie-sidan för att se datan.`);
+    // Visa bekrÃ¤ftelse
+    alert(`âœ… Import lyckades!\n\n${parsedData.length} rader importerade.\n\nGÃ¥ till Inventarie-sidan fÃ¶r att se datan.`);
 
     // Reset efter 2 sekunder och omdirigera
     setTimeout(() => {
@@ -355,22 +355,22 @@ function downloadDeviceTemplate() {
             'Enhet ID': 'DEV-001',
             'Enhetsnamn': 'Laptop Dell XPS 15',
             'Typ': 'Laptop',
-            'Ägare': 'Anna Andersson',
+            'Ã„gare': 'Anna Andersson',
             'Status': 'Aktiv'
         },
         {
             'Enhet ID': 'DEV-002',
             'Enhetsnamn': 'Desktop HP EliteDesk',
             'Typ': 'Desktop',
-            'Ägare': 'Erik Eriksson',
+            'Ã„gare': 'Erik Eriksson',
             'Status': 'Aktiv'
         },
         {
             'Enhet ID': 'DEV-003',
             'Enhetsnamn': 'MacBook Pro 14"',
             'Typ': 'Laptop',
-            'Ägare': 'Sara Svensson',
-            'Status': 'Underhåll'
+            'Ã„gare': 'Sara Svensson',
+            'Status': 'UnderhÃ¥ll'
         }
     ];
 
@@ -382,27 +382,27 @@ function downloadConsumableTemplate() {
         {
             'Produkt ID': 'CONS-001',
             'Produktnamn': 'Logitech MX Master 3',
-            'Kategori': 'Möss',
+            'Kategori': 'MÃ¶ss',
             'Antal i lager': 15,
-            'Minimum nivå': 5
+            'Minimum nivÃ¥': 5
         },
         {
             'Produkt ID': 'CONS-002',
             'Produktnamn': 'Sony WH-1000XM5',
-            'Kategori': 'Hörlurar',
+            'Kategori': 'HÃ¶rlurar',
             'Antal i lager': 8,
-            'Minimum nivå': 5
+            'Minimum nivÃ¥': 5
         },
         {
             'Produkt ID': 'CONS-003',
             'Produktnamn': 'USB-C Kabel 2m',
             'Kategori': 'Kablar',
             'Antal i lager': 3,
-            'Minimum nivå': 10
+            'Minimum nivÃ¥': 10
         }
     ];
 
-    downloadExcel(data, 'Förbrukningsvarumall.xlsx');
+    downloadExcel(data, 'FÃ¶rbrukningsvarumall.xlsx');
 }
 
 function downloadExcel(data, filename) {

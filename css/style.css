@@ -1,5 +1,5 @@
 /* ===========================
-   GRUNDLÄGGANDE RESET & VARIABLER
+   GRUNDLÃ„GGANDE RESET & VARIABLER
    =========================== */
 * {
     margin: 0;
@@ -112,7 +112,7 @@ main {
 }
 
 /* ===========================
-   SÖKFÄLT SEKTION
+   SÃ–KFÃ„LT SEKTION
    =========================== */
 .search-section {
     background-color: var(--white);
@@ -669,7 +669,7 @@ tbody tr:last-child td {
 }
 
 /* ===========================
-   LÄGG TILL NY SEKTION
+   LÃ„GG TILL NY SEKTION
    =========================== */
 .add-section {
     text-align: center;
@@ -752,7 +752,7 @@ tbody tr:last-child td {
 }
 
 .feature-list li:before {
-    content: "✓";
+    content: "âœ“";
     position: absolute;
     left: 0;
     color: var(--success);
