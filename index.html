@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IT-Inventariesystem</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/modal.css">
 </head>
 <body>
 <header>
@@ -37,7 +38,7 @@
         </div>
     </section>
 
-    <!-- Filter knappar - FIXAD VERSION -->
+    <!-- Filter knappar -->
     <section class="filter-section">
         <button class="filter-btn active" onclick="filterCategory('all', this)">Alla</button>
         <button class="filter-btn" onclick="filterCategory('devices', this)">Enheter & Datorer</button>
@@ -45,7 +46,7 @@
     </section>
 
     <!-- Enheter och ägare (datorer) -->
-    <section class="inventory-section">
+    <section class="inventory-section" id="deviceSection">
         <h2>Enheter och Ägare</h2>
         <div class="table-container">
             <table id="devicesTable">
@@ -61,7 +62,6 @@
                 </tr>
                 </thead>
                 <tbody id="devicesData">
-                <!-- Exempel data - kommer ersättas av PHP -->
                 <tr data-category="devices">
                     <td>DEV-001</td>
                     <td>Laptop Dell XPS 15</td>
@@ -95,7 +95,7 @@
     </section>
 
     <!-- Förbrukningsvaror med saldo -->
-    <section class="inventory-section">
+    <section class="inventory-section" id="consumableSection">
         <h2>Förbrukningsvaror</h2>
         <div class="table-container">
             <table id="consumablesTable">
@@ -111,7 +111,6 @@
                 </tr>
                 </thead>
                 <tbody id="consumablesData">
-                <!-- Exempel data - kommer ersättas av PHP -->
                 <tr data-category="consumables">
                     <td>CONS-001</td>
                     <td>Logitech MX Master 3</td>
@@ -162,9 +161,9 @@
         </div>
     </section>
 
-    <!-- Lägg till ny enhet knapp -->
+    <!-- Lägg till ny enhet knapp – openAddModal() öppnar modalen -->
     <section class="add-section">
-        <button class="add-btn" onclick="addNewItem()">
+        <button class="add-btn" onclick="openAddModal()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -178,6 +177,166 @@
     <p>&copy; 2026 IT-Inventariesystem | Utvecklad av Elias, Dylan, Daniil, Lucas, Alexander & Vincent</p>
 </footer>
 
+<!-- ============================================================
+     MODAL – Lägg till ny enhet eller förbrukningsvara
+     ============================================================ -->
+<div class="modal-overlay" id="addModal" onclick="closeOnOverlay(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+        <!-- Header -->
+        <div class="modal-header">
+            <div>
+                <h2 id="modalTitle">Lägg till ny post</h2>
+                <p>Välj typ och fyll i informationen nedan</p>
+            </div>
+            <button class="modal-close" onclick="closeAddModal()" aria-label="Stäng">&#x2715;</button>
+        </div>
+
+        <!-- Flikar -->
+        <div class="type-tabs">
+            <button class="type-tab active" onclick="switchTab('device', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <path d="M8 21h8M12 17v4"/>
+                </svg>
+                Enhet / Dator
+            </button>
+            <button class="type-tab" onclick="switchTab('consumable', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                Förbrukningsvara
+            </button>
+        </div>
+
+        <!-- Formulär -->
+        <div class="modal-body" id="formBody">
+
+            <!-- ENHET -->
+            <form id="deviceForm" class="form-panel active" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Enhetsnamn <span class="required">*</span></label>
+                        <input type="text" name="device_name" placeholder="t.ex. Laptop Dell XPS 15" maxlength="255">
+                        <span class="error-msg">Enhetsnamn krävs.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Typ <span class="required">*</span></label>
+                        <select name="device_type">
+                            <option value="">Välj typ…</option>
+                            <option value="Laptop">Laptop</option>
+                            <option value="Desktop">Desktop</option>
+                            <option value="Skärm">Skärm</option>
+                            <option value="Surfplatta">Surfplatta</option>
+                            <option value="Telefon">Telefon</option>
+                            <option value="Övrigt">Övrigt</option>
+                        </select>
+                        <span class="error-msg">Välj en typ.</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ägare <span class="required">*</span></label>
+                        <input type="text" name="owner" placeholder="För- och efternamn" maxlength="255">
+                        <span class="error-msg">Ägare krävs.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="Aktiv">Aktiv</option>
+                            <option value="Underhåll">Underhåll</option>
+                            <option value="Inaktiv">Inaktiv</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row form-row-full">
+                    <div class="form-group">
+                        <label>Enhet ID <span class="optional">(lämna tomt för auto-genererat)</span></label>
+                        <input type="text" name="device_id" placeholder="t.ex. DEV-042" maxlength="50">
+                    </div>
+                </div>
+            </form>
+
+            <!-- FÖRBRUKNINGSVARA -->
+            <form id="consumableForm" class="form-panel" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Produktnamn <span class="required">*</span></label>
+                        <input type="text" name="product_name" placeholder="t.ex. Logitech MX Master 3" maxlength="255">
+                        <span class="error-msg">Produktnamn krävs.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori <span class="required">*</span></label>
+                        <select name="category">
+                            <option value="">Välj kategori…</option>
+                            <option value="Möss">Möss</option>
+                            <option value="Tangentbord">Tangentbord</option>
+                            <option value="Hörlurar">Hörlurar</option>
+                            <option value="Kablar">Kablar</option>
+                            <option value="Skärmar">Skärmar</option>
+                            <option value="Övrigt">Övrigt</option>
+                        </select>
+                        <span class="error-msg">Välj en kategori.</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Antal i lager <span class="required">*</span></label>
+                        <input type="number" name="stock" placeholder="0" min="0" max="99999" oninput="updateStockIndicator()">
+                        <span class="error-msg">Ange ett giltigt antal (minst 0).</span>
+                        <div class="stock-indicator" id="stockIndicator" style="display:none">
+                            <span class="stock-dot" id="stockDot"></span>
+                            <span id="stockLabel"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Miniminivå <span class="required">*</span></label>
+                        <input type="number" name="min_level" placeholder="5" min="0" max="99999" oninput="updateStockIndicator()">
+                        <span class="error-msg">Ange ett giltigt minimiantal (minst 0).</span>
+                        <span class="stock-hint">Varning visas när lagret understiger detta värde.</span>
+                    </div>
+                </div>
+                <div class="form-row form-row-full">
+                    <div class="form-group">
+                        <label>Produkt ID <span class="optional">(lämna tomt för auto-genererat)</span></label>
+                        <input type="text" name="product_id" placeholder="t.ex. CONS-006" maxlength="50">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lyckad-vy -->
+        <div class="modal-success" id="modalSuccess">
+            <div class="success-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <h3 id="successTitle">Posten lades till!</h3>
+            <p id="successMsg">Informationen har sparats i databasen.</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" id="modalFooter">
+            <button class="btn-cancel" onclick="closeAddModal()">Avbryt</button>
+            <button class="btn-submit" id="submitBtn" onclick="submitForm()">
+                <div class="spinner"></div>
+                <span class="btn-label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                         style="display:inline-block;vertical-align:middle;margin-right:4px">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Spara
+                </span>
+            </button>
+        </div>
+
+    </div>
+</div>
+<!-- END MODAL -->
+
+<!-- script_with_api.js laddas INNAN modal.js -->
 <script src="js/script_with_api.js"></script>
+<script src="js/modal.js"></script>
 </body>
 </html>

@@ -1,20 +1,22 @@
 <?php
 /**
-
-Databas Konfiguration
-IT-Inventariesystem*/
+ * Databas Konfiguration
+ * IT-Inventariesystem (PostgreSQL-version)
+ */
 
 // Databas inställningar
-define('DB_HOST', 'inventory.its.ax');
+define('DB_HOST', 'database.its.ax');
 define('DB_NAME', 'it_inventory');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+define('DB_USER', 'database');
+define('DB_PASS', 'database');
+define('DB_CHARSET', 'utf8'); // PostgreSQL använder 'client_encoding' istället för charset i DSN
 
 // Skapa PDO-anslutning
 function getDatabaseConnection() {
     try {
-        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+        // PostgreSQL DSN-format
+        $dsn = "pgsql:host=" . DB_HOST . ";dbname=" . DB_NAME;
+
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -22,6 +24,10 @@ function getDatabaseConnection() {
         ];
 
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+
+        // Sätt teckenkodning för sessionen
+        $pdo->exec("SET NAMES 'UTF8'");
+
         return $pdo;
 
     } catch (PDOException $e) {

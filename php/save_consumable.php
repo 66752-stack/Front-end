@@ -11,11 +11,11 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config.php';
 
-// Hantera POST-data
 $input = json_decode(file_get_contents('php://input'), true);
 
-// Validera input
-if (!isset($input['product_name']) || !isset($input['category'])) {
+// Validera obligatoriska fält
+if (!isset($input['product_name']) || !isset($input['category'])
+    || !isset($input['stock']) || !isset($input['min_level'])) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
@@ -24,65 +24,68 @@ if (!isset($input['product_name']) || !isset($input['category'])) {
     exit;
 }
 
+// Validera numeriska värden
+$stock     = filter_var($input['stock'],     FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+$min_level = filter_var($input['min_level'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+
+if ($stock === false || $min_level === false) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Ogiltiga numeriska värden'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 try {
     $pdo = getDatabaseConnection();
 
-    // Generera eller använd befintligt product_id
     $product_id = $input['product_id'] ?? null;
-    $is_update = false;
+    $is_update  = false;
 
     if ($product_id) {
-        // Kontrollera om produkten finns
         $checkStmt = $pdo->prepare("SELECT id FROM consumables WHERE product_id = ?");
         $checkStmt->execute([$product_id]);
         $is_update = $checkStmt->fetch() !== false;
     } else {
-        // Generera nytt ID
         $product_id = 'CONS-' . strtoupper(substr(uniqid(), -9));
     }
 
     if ($is_update) {
-        // Uppdatera befintlig produkt
         $stmt = $pdo->prepare("
-            UPDATE consumables 
+            UPDATE consumables
             SET product_name = ?,
-                category = ?,
-                stock = ?,
-                min_level = ?
+                category     = ?,
+                stock        = ?,
+                min_level    = ?
             WHERE product_id = ?
         ");
-
         $stmt->execute([
-            $input['product_name'],
-            $input['category'],
-            $input['stock'] ?? 0,
-            $input['min_level'] ?? 5,
+            substr($input['product_name'], 0, 255),
+            substr($input['category'],     0, 100),
+            $stock,
+            $min_level,
             $product_id
         ]);
-
-        $message = 'Produkten uppdaterades';
-
+        $message = 'Varan uppdaterades';
     } else {
-        // Lägg till ny produkt
         $stmt = $pdo->prepare("
             INSERT INTO consumables (product_id, product_name, category, stock, min_level)
             VALUES (?, ?, ?, ?, ?)
         ");
-
         $stmt->execute([
             $product_id,
-            $input['product_name'],
-            $input['category'],
-            $input['stock'] ?? 0,
-            $input['min_level'] ?? 5
+            substr($input['product_name'], 0, 255),
+            substr($input['category'],     0, 100),
+            $stock,
+            $min_level
         ]);
-
-        $message = 'Produkten lades till';
+        $message = 'Varan lades till';
     }
 
     echo json_encode([
-        'success' => true,
-        'message' => $message,
+        'success'    => true,
+        'message'    => $message,
         'product_id' => $product_id
     ], JSON_UNESCAPED_UNICODE);
 
@@ -91,7 +94,13 @@ try {
     echo json_encode([
         'success' => false,
         'message' => 'Ett fel uppstod',
-        'error' => $e->getMessage()
+        'error'   => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
 ?>
+
+
+
+
+
+
