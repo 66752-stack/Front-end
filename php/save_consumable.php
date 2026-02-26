@@ -9,7 +9,7 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-require_once '../config.php';
+require_once 'config.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 

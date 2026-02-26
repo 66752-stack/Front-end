@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 
-require_once '../config.php';
+require_once 'config.php';
 
 // Hämta sökterm
 $query = $_GET['query'] ?? '';
