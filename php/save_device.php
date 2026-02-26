@@ -33,7 +33,7 @@ try {
 
     if ($device_id) {
         // Kontrollera om enheten finns
-        $checkStmt = $pdo->prepare("SELECT id FROM devices WHERE device_id = ?");
+        $checkStmt = $pdo->prepare("SELECT device_id FROM devices WHERE device_id = ?");
         $checkStmt->execute([$device_id]);
         $is_update = $checkStmt->fetch() !== false;
     } else {
@@ -58,7 +58,7 @@ try {
             $input['device_type'],
             $input['owner'],
             $input['status'] ?? 'Aktiv',
-            date('Y-m-d'),
+            date('Y-m-d H:i:s'),
             $device_id
         ]);
 
@@ -67,8 +67,8 @@ try {
     } else {
         // Lägg till ny enhet
         $stmt = $pdo->prepare("
-            INSERT INTO devices (device_id, device_name, device_type, owner, status, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO devices (device_name, device_type, owner, status, last_updated)
+            VALUES (?, ?, ?, ?, ?)
         ");
 
         $stmt->execute([
@@ -77,7 +77,7 @@ try {
             $input['device_type'],
             $input['owner'],
             $input['status'] ?? 'Aktiv',
-            date('Y-m-d')
+            date('Y-m-d H:i:s')
         ]);
 
         $message = 'Enheten lades till';
