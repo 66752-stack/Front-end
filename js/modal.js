@@ -171,7 +171,7 @@ async function submitForm() {
                 owner:       form.querySelector('[name="owner"]').value.trim(),
                 status:      form.querySelector('[name="status"]').value
             };
-            endpoint = 'api/save_device.php';
+            endpoint = 'php/save_device.php';
         } else {
             const form = document.getElementById('consumableForm');
             payload = {
@@ -181,7 +181,7 @@ async function submitForm() {
                 stock:        parseInt(form.querySelector('[name="stock"]').value),
                 min_level:    parseInt(form.querySelector('[name="min_level"]').value)
             };
-            endpoint = 'api/save_consumable.php';
+            endpoint = 'php/save_consumable.php';
         }
 
         const res  = await fetch(endpoint, {
