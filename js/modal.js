@@ -288,6 +288,9 @@ function showSuccess(title, msg) {
     document.getElementById('successMsg').textContent          = msg;
     document.getElementById('modalSuccess').classList.add('active');
 
+    // Ladda om lagerdata efter lyckad sparning
+    loadInventoryFromDB();
+
     // Stäng automatiskt efter 2 sekunder
     setTimeout(closeAddModal, 2200);
 }

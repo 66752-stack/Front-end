@@ -1,15 +1,98 @@
 // ===========================
+// HÄMTA DATA FRÅN DATABASEN
+// ===========================
+async function loadInventoryFromDB() {
+    try {
+        const res  = await fetch('php/get_inventory.php');
+        const data = await res.json();
+
+        if (!data.success) {
+            console.error('Kunde inte hämta inventariedata:', data.message);
+            return;
+        }
+
+        const devicesBody     = document.getElementById('devicesData');
+        const consumablesBody = document.getElementById('consumablesData');
+
+        // Rensa tabellerna innan vi fyller dem
+        devicesBody.innerHTML     = '';
+        consumablesBody.innerHTML = '';
+
+        // Fyll enheter
+        data.devices.forEach(device => {
+            const statusMap = {
+                'Aktiv':     'status-active',
+                'Underhåll': 'status-maintenance',
+                'Inaktiv':   'status-inactive'
+            };
+            const statusClass = statusMap[device.status] || 'status-active';
+            const updated = device.last_updated
+                ? device.last_updated.split(' ')[0]
+                : new Date().toISOString().split('T')[0];
+
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-category', 'devices');
+            tr.innerHTML = `
+                <td>${escapeHtml(device.device_id)}</td>
+                <td>${escapeHtml(device.device_name)}</td>
+                <td>${escapeHtml(device.device_type)}</td>
+                <td>${escapeHtml(device.owner)}</td>
+                <td><span class="status-badge ${statusClass}">${escapeHtml(device.status)}</span></td>
+                <td>${escapeHtml(updated)}</td>
+                <td><button class="edit-btn" onclick="editItem('${escapeHtml(device.device_id)}')">Redigera</button></td>
+            `;
+            devicesBody.appendChild(tr);
+        });
+
+        // Fyll förbrukningsvaror
+        data.consumables.forEach(item => {
+            let stockClass, stockLabel;
+            if (item.stock == 0) {
+                stockClass = 'stock-out';  stockLabel = 'Slut i lager';
+            } else if (item.stock < item.min_level) {
+                stockClass = 'stock-low';  stockLabel = 'Lågt lager';
+            } else {
+                stockClass = 'stock-good'; stockLabel = 'I lager';
+            }
+
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-category', 'consumables');
+            tr.innerHTML = `
+                <td>${escapeHtml(item.product_id)}</td>
+                <td>${escapeHtml(item.product_name)}</td>
+                <td>${escapeHtml(item.category)}</td>
+                <td>${item.stock}</td>
+                <td>${item.min_level}</td>
+                <td><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
+                <td><button class="edit-btn" onclick="editItem('${escapeHtml(item.product_id)}')">Redigera</button></td>
+            `;
+            consumablesBody.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error('Fel vid hämtning av inventariedata:', err);
+    }
+}
+
+// ===========================
+// XSS-SKYDD
+// ===========================
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#039;');
+}
+
+// ===========================
 // SÖKFUNKTION
 // ===========================
 function searchInventory() {
     const searchTerm = document.getElementById('searchField').value.toLowerCase().trim();
-
     searchInTable('devicesData', searchTerm);
     searchInTable('consumablesData', searchTerm);
-
-    if (searchTerm !== '') {
-        console.log(`Söker efter: "${searchTerm}"`);
-    }
 }
 
 function searchInTable(tableBodyId, searchTerm) {
@@ -17,56 +100,37 @@ function searchInTable(tableBodyId, searchTerm) {
     if (!tableBody) return;
 
     const rows = tableBody.getElementsByTagName('tr');
-    let visibleCount = 0;
-
     for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const text = row.textContent || row.innerText;
-
-        if (searchTerm === '' || text.toLowerCase().includes(searchTerm)) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
+        const text = rows[i].textContent || rows[i].innerText;
+        rows[i].style.display = (searchTerm === '' || text.toLowerCase().includes(searchTerm)) ? '' : 'none';
     }
-
-    return visibleCount;
 }
 
 // ===========================
 // FILTERFUNKTION
 // ===========================
 function filterCategory(category) {
-    const deviceRows = document.querySelectorAll('[data-category="devices"]');
-    const consumableRows = document.querySelectorAll('[data-category="consumables"]');
-    const deviceSection = document.querySelector('.inventory-section:has(#devicesTable)');
-    const consumableSection = document.querySelector('.inventory-section:has(#consumablesTable)');
+    const deviceRows        = document.querySelectorAll('[data-category="devices"]');
+    const consumableRows    = document.querySelectorAll('[data-category="consumables"]');
+    const deviceSection     = document.getElementById('deviceSection');
+    const consumableSection = document.getElementById('consumableSection');
 
     if (category === 'all') {
-        showRows(deviceRows);
-        showRows(consumableRows);
-        if (deviceSection) deviceSection.style.display = 'block';
-        if (consumableSection) consumableSection.style.display = 'block';
+        deviceRows.forEach(r => r.style.display = '');
+        consumableRows.forEach(r => r.style.display = '');
+        if (deviceSection)      deviceSection.style.display      = 'block';
+        if (consumableSection)  consumableSection.style.display  = 'block';
     } else if (category === 'devices') {
-        showRows(deviceRows);
-        hideRows(consumableRows);
-        if (deviceSection) deviceSection.style.display = 'block';
-        if (consumableSection) consumableSection.style.display = 'none';
+        deviceRows.forEach(r => r.style.display = '');
+        consumableRows.forEach(r => r.style.display = 'none');
+        if (deviceSection)      deviceSection.style.display      = 'block';
+        if (consumableSection)  consumableSection.style.display  = 'none';
     } else if (category === 'consumables') {
-        hideRows(deviceRows);
-        showRows(consumableRows);
-        if (deviceSection) deviceSection.style.display = 'none';
-        if (consumableSection) consumableSection.style.display = 'block';
+        deviceRows.forEach(r => r.style.display = 'none');
+        consumableRows.forEach(r => r.style.display = '');
+        if (deviceSection)      deviceSection.style.display      = 'none';
+        if (consumableSection)  consumableSection.style.display  = 'block';
     }
-}
-
-function showRows(rows) {
-    rows.forEach(row => { row.style.display = ''; });
-}
-
-function hideRows(rows) {
-    rows.forEach(row => { row.style.display = 'none'; });
 }
 
 // ===========================
@@ -78,38 +142,22 @@ function editItem(itemId, type = 'device') {
 }
 
 // ===========================
-// LÄGG TILL NY ENHET FUNKTION
-// ===========================
-function addNewItem() {
-    alert('Lägg till ny enhet/vara\n\nDenna funktion kommer att öppna ett formulär för att lägga till nya objekt.');
-    console.log('Öppnar formulär för att lägga till ny enhet/vara');
-}
-
-// ===========================
 // LAGER VARNINGAR
 // ===========================
 function checkStockLevels() {
     const consumableRows = document.querySelectorAll('#consumablesData tr');
-    let lowStockItems = [];
-    let outOfStockItems = [];
+    let lowStockItems = [], outOfStockItems = [];
 
     consumableRows.forEach(row => {
         const cells = row.getElementsByTagName('td');
         if (cells.length >= 6) {
-            const itemName = cells[1].textContent;
+            const itemName     = cells[1].textContent;
             const currentStock = parseInt(cells[3].textContent);
-            const minLevel = parseInt(cells[4].textContent);
-
-            if (currentStock === 0) {
-                outOfStockItems.push(itemName);
-            } else if (currentStock < minLevel) {
-                lowStockItems.push(itemName);
-            }
+            const minLevel     = parseInt(cells[4].textContent);
+            if (currentStock === 0)           outOfStockItems.push(itemName);
+            else if (currentStock < minLevel) lowStockItems.push(itemName);
         }
     });
-
-    if (outOfStockItems.length > 0) console.warn('Slut i lager:', outOfStockItems);
-    if (lowStockItems.length > 0) console.warn('Lågt lager:', lowStockItems);
 
     return { lowStock: lowStockItems, outOfStock: outOfStockItems };
 }
@@ -122,22 +170,16 @@ function sortTable(tableId, columnIndex) {
     if (!table) return;
 
     const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-
+    const rows  = Array.from(tbody.querySelectorAll('tr'));
     const isAscending = table.dataset.sortOrder !== 'asc';
     table.dataset.sortOrder = isAscending ? 'asc' : 'desc';
 
     rows.sort((a, b) => {
         const aValue = a.cells[columnIndex].textContent.trim();
         const bValue = b.cells[columnIndex].textContent.trim();
+        const aNum = parseFloat(aValue), bNum = parseFloat(bValue);
 
-        const aNum = parseFloat(aValue);
-        const bNum = parseFloat(bValue);
-
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-            return isAscending ? aNum - bNum : bNum - aNum;
-        }
-
+        if (!isNaN(aNum) && !isNaN(bNum)) return isAscending ? aNum - bNum : bNum - aNum;
         return isAscending
             ? aValue.localeCompare(bValue, 'sv')
             : bValue.localeCompare(aValue, 'sv');
@@ -147,31 +189,24 @@ function sortTable(tableId, columnIndex) {
 }
 
 // ===========================
-// EXPORT FUNKTIONER
+// EXPORT TILL CSV
 // ===========================
 function exportToCSV(tableId, filename) {
     const table = document.getElementById(tableId);
     if (!table) return;
 
-    let csv = [];
-    const rows = table.querySelectorAll('tr');
-
-    rows.forEach(row => {
+    const csv = [];
+    table.querySelectorAll('tr').forEach(row => {
         const cols = row.querySelectorAll('td, th');
-        const rowData = Array.from(cols).map(col => {
-            if (col.querySelector('button')) return '';
-            return `"${col.textContent.trim()}"`;
-        }).filter(text => text !== '""');
-
+        const rowData = Array.from(cols)
+            .map(col => col.querySelector('button') ? '' : `"${col.textContent.trim()}"`)
+            .filter(t => t !== '""');
         csv.push(rowData.join(','));
     });
 
-    const csvContent = csv.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
+    link.setAttribute('href', URL.createObjectURL(blob));
     link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
@@ -180,96 +215,33 @@ function exportToCSV(tableId, filename) {
 }
 
 // ===========================
-// STATISTIK FUNKTIONER
-// ===========================
-function getInventoryStats() {
-    const deviceRows = document.querySelectorAll('#devicesData tr:not([style*="display: none"])');
-    const consumableRows = document.querySelectorAll('#consumablesData tr:not([style*="display: none"])');
-
-    const stats = {
-        totalDevices: deviceRows.length,
-        totalConsumables: consumableRows.length,
-        activeDevices: 0,
-        maintenanceDevices: 0,
-        stockWarnings: checkStockLevels()
-    };
-
-    deviceRows.forEach(row => {
-        const statusCell = row.querySelector('.status-badge');
-        if (statusCell) {
-            if (statusCell.classList.contains('status-active')) stats.activeDevices++;
-            else if (statusCell.classList.contains('status-maintenance')) stats.maintenanceDevices++;
-        }
-    });
-
-    return stats;
-}
-
-// ===========================
-// HJÄLPFUNKTIONER
-// ===========================
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('sv-SE');
-}
-
-function validateForm(formData) {
-    const errors = [];
-
-    if (!formData.name || formData.name.trim() === '') {
-        errors.push('Namn måste anges');
-    }
-
-    if (formData.quantity && formData.quantity < 0) {
-        errors.push('Antal kan inte vara negativt');
-    }
-
-    return { isValid: errors.length === 0, errors: errors };
-}
-
-// ===========================
 // INITIALISERING
 // ===========================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('IT-Inventariesystem initierat');
 
-    // loadSampleData() är BORTTAGEN – tabellerna börjar tomma
+    // Hämta all data från databasen vid sidladdning
+    loadInventoryFromDB();
 
+    // Sökfält
     const searchField = document.getElementById('searchField');
     if (searchField) {
-        searchField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') searchInventory();
-        });
-        searchField.addEventListener('input', function() {
-            searchInventory();
-        });
+        searchField.addEventListener('keypress', e => { if (e.key === 'Enter') searchInventory(); });
+        searchField.addEventListener('input', searchInventory);
     }
 
+    // Filterknappar
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             filterButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            const filter = this.getAttribute('data-filter');
-            filterCategory(filter);
+            filterCategory(this.getAttribute('data-filter'));
         });
     });
 
-    const addNewItemBtn = document.getElementById('addNewItemBtn');
-    if (addNewItemBtn) {
-        addNewItemBtn.addEventListener('click', addNewItem);
-    }
-
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('edit-btn')) {
-            const itemId = e.target.getAttribute('data-item-id');
-            const itemType = e.target.getAttribute('data-item-type');
-            editItem(itemId, itemType);
-        }
-    });
-
-    const headers = document.querySelectorAll('th');
-    headers.forEach((header) => {
+    // Sorteringsbara kolumnrubriker
+    document.querySelectorAll('th').forEach(header => {
         if (!header.textContent.includes('Åtgärder')) {
             header.style.cursor = 'pointer';
             header.title = 'Klicka för att sortera';
