@@ -168,6 +168,12 @@ main {
     transform: translateY(0);
 }
 
+main {
+    padding: 0 1.5rem;
+    margin: 2rem auto;
+    padding-bottom: 100px; /* extra utrymme så footern inte täcker något */
+}
+
 /* ===========================
    FILTER SEKTION
    =========================== */
@@ -638,7 +644,7 @@ tbody tr:last-child td {
 }
 
 .feature-list li:before {
-    content: "âœ“";
+    content: "✓";  /* rätt tecken */
     position: absolute;
     left: 0;
     color: var(--success);
@@ -984,8 +990,37 @@ footer p {
     opacity: 0.9;
 }
 
+.github-button {
+    display: inline-block;
+    background-color: #24292e; /* GitHub mörkgrå */
+    color: white;
+    padding: 10px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.github-button:hover {
+    background-color: #0366d6; /* GitHub blå */
+}
 
 
+/* Fade animation */
+.fade-section {
+    opacity: 1;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.fade-out {
+    opacity: 0;
+    transform: translateY(5px);
+}
+
+.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
 
 
 

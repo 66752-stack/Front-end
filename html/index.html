@@ -39,13 +39,13 @@
 
     <!-- Filter knappar -->
     <section class="filter-section">
-        <button class="filter-btn active" onclick="filterCategory('all', this)">Alla</button>
-        <button class="filter-btn" onclick="filterCategory('devices', this)">Enheter & Datorer</button>
-        <button class="filter-btn" onclick="filterCategory('consumables', this)">Förbrukningsvaror</button>
+        <button type="button" class="filter-btn active" data-filter="all">Alla</button>
+        <button type="button" class="filter-btn" data-filter="devices">Enheter & Datorer</button>
+        <button type="button" class="filter-btn" data-filter="consumables">Förbrukningsvaror</button>
     </section>
 
     <!-- Enheter och ägare (datorer) -->
-    <section class="inventory-section" id="deviceSection">
+    <section class="inventory-section fade-section" id="deviceSection">
         <h2>Enheter och Ägare</h2>
         <div class="table-container">
             <table id="devicesTable">
@@ -68,7 +68,7 @@
     </section>
 
     <!-- Förbrukningsvaror med saldo -->
-    <section class="inventory-section" id="consumableSection">
+    <section class="inventory-section fade-section" id="consumableSection">
         <h2>Förbrukningsvaror</h2>
         <div class="table-container">
             <table id="consumablesTable">
@@ -146,7 +146,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Enhetsnamn <span class="required">*</span></label>
-                        <input type="text" name="device_name" placeholder="t.ex. Laptop Dell XPS 15" maxlength="255">
+                        <input type="text" name="device_name" placeholder="t.ex. Laptop Dell XPS 15" maxlength="30">
                         <span class="error-msg">Enhetsnamn krävs.</span>
                     </div>
                     <div class="form-group">
@@ -166,7 +166,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Ägare <span class="required">*</span></label>
-                        <input type="text" name="owner" placeholder="För- och efternamn" maxlength="255">
+                        <input type="text" name="owner" placeholder="För- och efternamn" maxlength="30">
                         <span class="error-msg">Ägare krävs.</span>
                     </div>
                     <div class="form-group">
@@ -191,7 +191,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Produktnamn <span class="required">*</span></label>
-                        <input type="text" name="product_name" placeholder="t.ex. Logitech MX Master 3" maxlength="255">
+                        <input type="text" name="product_name" placeholder="t.ex. Logitech MX Master 3" maxlength="30">
                         <span class="error-msg">Produktnamn krävs.</span>
                     </div>
                     <div class="form-group">
